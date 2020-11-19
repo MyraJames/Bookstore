@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookstore</title>
+<link rel="stylesheet" href="styles.css"> 
+</head>
+<body>
+    <div class="page-container">
+        <h2>BOOKS</h2>
+       <div class="books-wrapper">
+           
+           <div class="books-target"/>
+        </div>
+ 
+        <div class="new-book-form-wrapper">
+            <h3>ADD A BOOK</h3>   
+            <form id = "new-book-form" onsubmit="handleSubmit()">
+                <input type="text"placeholder='Title'>
+                <input type="text"placeholder='Author'>
+                <textarea></textarea>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+</div>
+
+</body>
+
+
+<script>
+    function bookBuilder(title, author, review) {
+        const booksWrapper = document.querySelector(".books-wrapper")
+        const booksTarget = document.querySelector(".books-target")
+        
+        const newBookWrapper = document.createElement("div")
+        newBookWrapper.className = "book-wrapper"
+
+        const newTitle = document.createElement("h3")
+        const newAuthor = document.createElement("h4")
+        const newReview = document.createElement("p")
+
+        newTitle.innerHTML = title
+        newAuthor.innerHTML = author
+        newReview.innerHTML = review
+
+        newBookWrapper.appendChild(newTitle)
+        newBookWrapper.appendChild(newAuthor)
+        if (review) {
+            newBookWrapper.appendChild(newReview)
+        }
+
+        const newBookButtonsWrapper = document.createElement("div")
+        newBookButtonsWrapper.className ="books-button-wrapper"
+
+        const newEditButton = document.createElement("button")
+        const newDeleteButton = document.createElement("button")
+
+        newEditButton.innerHTML ="Edit"
+        newDeleteButton.innerHTML ="Delete"
+
+        newEditButton.onclick = () => handleEdit(title, author, review, newBookWrapper)
+        newDeleteButton.onclick = () => handleDelete(title, newBookWrapper)
+
+        newBookButtonsWrapper.appendChild(newEditButton)
+        newBookButtonsWrapper.appendChild(newDeleteButton)
+
+        newBookWrapper.appendChild(newBookButtonsWrapper)
+        
+
+        booksWrapper.insertBefore(newBookWrapper, booksTarget)
+            
+
+
+    }
+
+
+    fetch("http://127.0.0.1:5000/book/get/marshmallow")
+    .then(response => response.json())
+    .then(data => {
+        data.forEach(book => {
+           bookBuilder(book.title, book.author, book.review)
+            
+        })
+    })
+    .catch(error => console.log("ERROR FETCHING BOOKS: ", error))
+
+    function handleSubmit() {
+        event.preventDefault()
+
+        const form = document.getElementById("new-book-form")
+        const title = form.children[0].value
+        const author = form.children[1].value
+        const review = form.children[2].value
+        console.log(title, author, review);
+        bookBuilder(title, author, review);
+
+        fetch("http://127.0.0.1:5000/book/add", {
+            method: "POST",
+            headers: { "content-type": "application/json"},
+            body: JSON.stringify({
+                title: title,
+                author: author,
+                review: review
+            })
+        })
+
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.log("Error Creating Book:", error))
+    }
+
+
+    function handleEdit(title, author, review, bookWrapper) {
+        const newEditForm = document.createElement("form")
+        const newTitleInput = document.createElement("input")
+        const newAuthorInput = document.createElement("input")
+        const newReviewInput = document.createElement("textarea")
+        const newSubmitButton = document.createElement("button")
+
+        newTitleInput.value = title
+        newTitleInput.placeholder = "Title"
+
+        newAuthorInput.value = author
+        newAuthorInput.placeholder = "Author"
+
+        newReviewInput.value = review
+        newReviewInput.placeholder = "Review"
+
+        newSubmitButton.innerHTML = "Submit"
+        newSubmitButton.type = "submit"
+        newSubmitButton.onclick = () => handleEditSubmit(title, bookWrapper)
+
+        newEditForm.appendChild(newTitleInput)
+        newEditForm.appendChild(newAuthorInput)
+        newEditForm.appendChild(newReviewInput)
+        newEditForm.appendChild(newSubmitButton)
+
+        bookWrapper.appendChild(newEditForm)
+
+    }
+
+    function handleEditSubmit(title, bookWrapper) {
+        event.preventDefault()
+
+        newTitle = bookWrapper.children[bookWrappper.children.length -1].value
+        newAuthor = bookWrapper.children[bookWrappper.children.length -1].value
+        newReview = bookWrapper.children[bookWrappper.children.length -1].value
+        
+
+
+        fetch(`http://127.0.0.1:5000/book/update/${title}`, {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+                title: newTitle,
+                author: newAuthor,
+                review: newReview
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+            if (data = "Data updated Successfully") {
+                bookWrapper.children[0].innerHTML = newTitle
+                bookWrapper.children[1].innerHTML = newAuthor
+                if (bookWrapper.children[2].tagName === "P" && newReview) {
+                    bookWrapper.children[2].innerHTML = newReview
+                }
+                else if (bookWrapper.children[2].tagName === "P" && !newReview) {
+                    bookWrapper.children[2].remove()
+                }
+                else if (bookWrapper.children[2].tagName !== "P" && newReview) {
+                    const newP = document.createElement("P")
+                    newP.innerHTML = newReview
+                    bookWrapper.insertBefore(newP, bookWrapper.children[2])
+                }
+
+                bookWrapper.children[bookWrapper.children.length -1].remove()
+            }
+        })
+        .catch(error => console.log(error))
+    }
+
+    function handleDelete(title, bookWrapper) {
+        fetch(`http://127.0.0.1:5000/book/delete/${title}`, { method: "DELETE" })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+            if (data === `Book with title ${title} was successfully deleted`) {
+                bookWrapper.remove()
+            }
+        })
+        .catch(error => console.log(error))
+    }
+</script>
+
+</html>
+
+
+
